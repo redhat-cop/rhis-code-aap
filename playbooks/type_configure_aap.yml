@@ -1,0 +1,25 @@
+---
+- name: "Regenerate Private Automation Hub token"
+  ansible.builtin.import_playbook: function_pah_token.yml
+  vars:
+    host: bastion
+
+- name: "Download Collections for Private Automation Hub"
+  ansible.builtin.import_playbook: function_download_collections.yml
+  vars:
+    host: bastion
+
+- name: "Configure AAP"
+  ansible.builtin.import_playbook: function_configure_aap.yml
+  vars:
+     # tweak this if you want to change which roles to run via dispatch to configure AAP
+    aap_hostname: "{{ gateway_main_url }}"
+    aap_username: "{{ gateway_admin_username }}"
+    aap_password: "{{ gateway_admin_password }}"
+    aap_configuration_dispatcher_roles: >
+      {{ gateway_configuration_dispatcher_roles
+      + hub_configuration_dispatcher_roles
+      + controller_configuration_dispatcher_roles
+      + eda_configuration_dispatcher_roles
+      }}
+    host: bastion

@@ -1,0 +1,17 @@
+---
+# Defaults for aap_license_download role
+aap_license_download_token_url: "https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token"
+aap_license_download_redhat_api: "https://api.access.redhat.com/management/v1"
+aap_license_download_file: "{{ lookup('env', 'HOME') }}/aap_downloads/license.zip"
+aap_setup_down_offline_token: "{{ lookup('env', 'RHSM_REFRESH_TOKEN') }}"
+
+# Allocation details if you want to create/find an allocation
+aap_license_download_allocation_name: "aap"
+aap_license_download_aap_quantity: 7
+aap_license_download_aap_subscription_sku: "MCT3691"
+aap_license_download_allocation_version: "6.16"
+aap_license_download_allocation_type: "Satellite"
+aap_license_download_validate_certs: false
+
+# Are we in a connected environment with direct internet access
+connected_environment: true

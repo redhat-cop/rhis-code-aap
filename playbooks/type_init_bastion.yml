@@ -1,0 +1,5 @@
+---
+- name: "Init Bastion"
+  ansible.builtin.import_playbook: function_init_bastion.yml
+  vars:
+    host: bastion

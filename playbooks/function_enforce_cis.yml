@@ -1,0 +1,14 @@
+---
+- name: Enforce CIS
+  hosts: "{{ host | default('localhost') }}"
+  gather_facts: false
+  become: true
+
+  pre_tasks:
+    - name: "Gather facts manually"
+      ansible.builtin.setup:
+      when: enforce_cis | default(false) | bool
+
+  roles:
+    - role: RedHatOfficial.rhel9-cis
+      when: enforce_cis | default(false) | bool

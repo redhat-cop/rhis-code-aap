@@ -1,0 +1,9 @@
+---
+argument_specs:
+  main:
+    short_description: Main entry point for the prepare installer host role
+    options:
+      prepare_installer_host_connected:
+        type: "bool"
+        default: true
+        description: "Whether we can execute this role at all, as it requires an Internet Connection"

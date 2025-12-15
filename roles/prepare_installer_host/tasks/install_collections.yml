@@ -1,0 +1,38 @@
+---
+- name: Ensure AAP setup working directory exists
+  ansible.builtin.file:
+    path: "{{ aap_setup_working_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Ensure AAP setup download destination directory exists
+  ansible.builtin.file:
+    path: "{{ aap_setup_down_dest_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Render ansible.cfg into playbook folder
+  ansible.builtin.template:
+    src: ansible.cfg.j2
+    dest: "{{ playbook_dir }}/../ansible.cfg"
+
+- name: Populate collections/requirements.yml
+  ansible.builtin.template:
+    src: requirements.yml.j2
+    dest: "{{ playbook_dir }}/../collections/requirements.yml"
+
+- name: Install required Ansible collections
+  ansible.builtin.command: >
+    ansible-galaxy collection install -r collections/requirements.yml
+  args:
+    chdir: "{{ playbook_dir }}/.."
+  register: __result
+  changed_when: "'Nothing to do' not in __result.stdout"
+
+- name: Install required Ansible roles
+  ansible.builtin.command: >
+    ansible-galaxy role install -r collections/requirements.yml
+  args:
+    chdir: "{{ playbook_dir }}/../"
+  register: __result
+  changed_when: "'Nothing to do' not in __result.stdout"

@@ -1,0 +1,15 @@
+---
+offline: true
+
+profile: basic # min, basic, moderate, safety, shared, production
+
+exclude_paths:
+  - .cache/
+  - imported/
+
+warn_list:
+  - name[template]
+  - run-once[play]
+
+skip_list: # temporary for fixing issues
+  - var-naming[no-role-prefix]

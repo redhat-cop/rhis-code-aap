@@ -1,0 +1,22 @@
+---
+- name: "Create new Private Automation Hub token"
+  hosts: "{{ host | default('localhost') }}"
+  gather_facts: true
+
+  tasks:
+    - name: "Create new ah_token"
+      ansible.hub.ah_token:
+        state: present
+        ah_username: "{{ gateway_admin_username }}"
+        ah_password: "{{ gateway_admin_password }}"
+        ah_host: "{{ gateway_main_url }}"
+      no_log: true
+
+    - name: "Check if ah_token was created"
+      ansible.builtin.fail:
+        msg: "error: check task Create new ah_token"
+      when: ah_token is not defined
+
+    - name: "Set Private Automation Hub Token as fact"
+      ansible.builtin.set_fact:
+        hub_token: "{{ ah_token.token }}"

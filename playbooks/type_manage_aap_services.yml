@@ -1,0 +1,8 @@
+---
+- name: "Manage AAP Services"
+  ansible.builtin.import_playbook: function_manage_aap_services.yml
+  vars:
+    host: aap
+    aap_default_action: "start"
+    # aap_action can be: start | stop | restart
+    # ansible-playbook manage_aap25.yml -u aapuser -e "aap_action=stop" --tags aap_stop

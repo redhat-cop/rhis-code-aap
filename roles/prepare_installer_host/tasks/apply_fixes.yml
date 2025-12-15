@@ -1,0 +1,17 @@
+---
+# Fix for AAP-47990 Bugfix, can be removed when PR merged
+- name: Copy file module utils for ansible.platform
+  ansible.builtin.copy:
+    src: files/aap_module.py
+    dest: ../imported/collections/ansible_collections/ansible/platform/plugins/module_utils/aap_module.py
+
+- name: Copy file for infra.aap_configuration dispatch role defaults
+  ansible.builtin.copy:
+    src: files/main.yml
+    dest: ../imported/collections/ansible_collections/infra/aap_configuration/roles/dispatch/defaults/main.yml
+
+- name: Copy file for infra.aap_configuration dispatch role arguments_spec
+  ansible.builtin.copy:
+    src: files/argument_specs.yml
+    dest: ../imported/collections/ansible_collections/infra/aap_configuration/roles/dispatch/meta/argument_specs.yml
+

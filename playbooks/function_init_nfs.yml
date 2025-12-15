@@ -1,0 +1,67 @@
+---
+- name: Prepare ownership of NFS mount for the installation
+  hosts: "{{ host | default('localhost') }}"
+  gather_facts: true
+  become: true
+
+  pre_tasks:
+    - name: "Ensure NFS client is installed"
+      ansible.builtin.package:
+        name: "nfs-utils"
+        state: present
+
+    - name: "Ensure mount point exists"
+      ansible.builtin.file:
+        path: "{{ mount_point }}"
+        state: directory
+        mode: "0755"
+
+  tasks:
+    - name: Mount chown unmount in a safe block
+      when: "'nfs' in groups"
+      block:
+        - name: "Mount NFS (entry will be created in fstab)"
+          ansible.posix.mount:
+            src: "{{ groups.nfs | first }}:{{ nfs_export }}"
+            path: "{{ mount_point }}"
+            fstype: nfs
+            opts: "{{ nfs_opts }}"
+            state: mounted
+
+        - name: "Change owner/group (optionally recursive) on the target path"
+          ansible.builtin.file:
+            path: "{{ mount_point }}/{{ target_subpath | trim('/') }}"
+            owner: "{{ desired_owner }}"
+            group: "{{ desired_group }}"
+            recurse: "{{ chown_recursive | bool }}"
+          when: target_subpath | length > 0
+
+        - name: "Change owner/group on share root (when no subpath given)"
+          ansible.builtin.file:
+            path: "{{ mount_point }}"
+            owner: "{{ desired_owner }}"
+            group: "{{ desired_group }}"
+            recurse: "{{ chown_recursive | bool }}"
+          when: target_subpath | length == 0
+
+      always:
+        - name: "Unmount the NFS share (leave fstab line)"
+          ansible.posix.mount:
+            path: "{{ mount_point }}"
+            state: unmounted
+          register: __unmount_result
+          failed_when: "__unmount_result is failed and ('not mounted' not in (__unmount_result.msg |default('')))"
+
+        - name: "Remove fstab entry so it stays temporary"
+          ansible.posix.mount:
+            src: "{{ groups.nfs | first }}:{{ nfs_export }}"
+            path: "{{ mount_point }}"
+            fstype: nfs
+            state: absent
+
+        - name: "Optionally remove the temporary mount directory"
+          ansible.builtin.file:
+            path: "{{ mount_point }}"
+            state: absent
+          when: cleanup_mount_dir | bool
+

@@ -1,0 +1,17 @@
+---
+- name: "Prepare AAP installer host for the installation"
+  hosts: "{{ host | default('localhost') }}"
+  connection: local
+  gather_facts: false
+
+  pre_tasks:
+    - name: "Set variables"
+      ansible.builtin.set_fact:
+        aap_setup_automation_hub_token: "{{ lookup('env', 'AAP_SETUP_AUTOMATION_HUB_TOKEN') }}"
+      no_log: true
+      when: connected_environment | bool
+
+  roles:
+    - role: prepare_installer_host
+      tags:
+        - always

@@ -1,0 +1,8 @@
+---
+- name: Configure AAP through dispatch
+  hosts: "{{ host | default('localhost') }}"
+  connection: local
+  gather_facts: false
+
+  roles:
+    - role: infra.aap_configuration.dispatch

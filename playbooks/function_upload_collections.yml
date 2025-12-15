@@ -1,0 +1,9 @@
+---
+- name: "Upload Collections to Private Automation Hub"
+  hosts: "{{ host | default('localhost') }}"
+  connection: local
+  gather_facts: false
+
+  roles:
+    - role: infra.aap_configuration.hub_namespace
+    - role: infra.aap_configuration.hub_collection

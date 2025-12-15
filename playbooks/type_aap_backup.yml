@@ -1,0 +1,5 @@
+---
+- name: "AAP Backup"
+  ansible.builtin.import_playbook: function_backup_aap.yml
+  vars:
+    host: bastion

@@ -1,0 +1,12 @@
+---
+- name: Include set_credentials.yml
+  ansible.builtin.include_tasks: set_credentials.yml
+
+- name: Include create_certfiles.yml
+  ansible.builtin.include_tasks: create_certfiles.yml
+  loop: "{{ aap_certs }}"
+  loop_control:
+    loop_var: cert_file
+
+- name: Include set_inventory_nodes.yml
+  ansible.builtin.include_tasks: set_inventory_nodes.yml

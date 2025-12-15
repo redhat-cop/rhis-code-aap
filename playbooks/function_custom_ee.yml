@@ -1,0 +1,67 @@
+---
+- name: Build custom execution environment
+  hosts: "{{ host | default('localhost') }}"
+  gather_facts: false
+
+  roles:
+    - role: infra.aap_configuration.controller_credentials
+      when: controller_credentials is defined
+
+  tasks:
+    - name: Ensure requirements are ready
+      become: true
+      block:
+        - name: Enable AAP repository
+          when: connected_environment | bool
+          community.general.rhsm_repository:
+            name: "ansible-automation-platform-2.5-for-rhel-9-x86_64-rpms"
+            state: enabled
+
+        - name: Ensure ansible-builder and podman installed
+          ansible.builtin.dnf:
+            name:
+              - podman
+              - ansible-builder
+            state: present
+
+    - name: Configure podman
+      when: ee_podman_config is defined
+      block:
+        - name: Update /etc/subuid
+          become: true
+          ansible.builtin.lineinfile:
+            line: "{{ ee_podman_config }}"
+            dest: /etc/subuid
+
+        - name: Update /etc/subgid
+          become: true
+          ansible.builtin.lineinfile:
+            line: "{{ ee_podman_config }}"
+            dest: /etc/subgid
+
+        - name: System migrate for podman
+          ansible.builtin.command: "podman system migrate"
+          register: __cmd_migrate_out
+          changed_when: __cmd_migrate_out.changed
+
+        - name: Gather facts
+          ansible.builtin.gather_facts:
+          when: ansible_user_uid is not defined
+
+        - name: Run loginctl enable-linger
+          ansible.builtin.command: "loginctl enable-linger {{ ansible_user_uid }}"
+          register: __cmd_out
+          changed_when: __cmd_out.changed
+
+    - name: Login to Private Automation Hub registry
+      containers.podman.podman_login:
+        username: "{{ vault_pah_registry_username }}"
+        password: "{{ vault_pah_registry_password }}"
+        registry: "{{ gateway_main_url }}"
+
+    - name: Create Custom EE
+      ansible.builtin.import_role:
+        name: infra.ee_utilities.ee_builder
+      vars:
+        ee_ah_host: "{{ gateway_main_url }}"
+        ee_ah_token: "{{ hub_token }}"

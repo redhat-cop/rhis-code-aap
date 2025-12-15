@@ -1,0 +1,7 @@
+---
+- name: Install python packages
+  ansible.builtin.pip:
+    name: "{{ python_reqs }}"
+    state: present
+    executable: pip3
+    extra_args: --user

@@ -1,0 +1,7 @@
+---
+- name: Create certificate file {{ cert_file.name }}
+  ansible.builtin.copy:
+    dest: "{{ set_aap_setup_variables_aap_setup_certs_dir }}/{{ cert_file.name }}"
+    content: "{{ cert_file.content }}"
+    mode: "0644"
+  when: cert_file is defined and cert_file.name is defined and cert_file.content is defined

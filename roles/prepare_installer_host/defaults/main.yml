@@ -1,0 +1,27 @@
+---
+issue_cert_workdir: "{{ lookup('env', 'HOME') }}/aap_downloads/certs"
+
+# issue_cert_root_ca_url:
+# issue_cert_sub_ca_url:
+
+ssh_dest_path: "{{ lookup('env', 'HOME') }}/.ssh/id_ed25519"
+ssh_dest_owner: "{{ lookup('env', 'USER') }}"
+ssh_dest_group: "{{ lookup('pipe', 'id -gn') }}"
+
+# change these if you are in a disconnected environment with a private automation hub
+# change this to false in a disconnected environment:
+prepare_installer_host_connected: true
+# provide your private galaxy server URL below, it will be used in the ansible.cfg
+prepare_installer_host_galaxy_server_url: https://galaxy.ansible.com/
+
+python_reqs:
+  - hvac            # required for community.hashicorp_vault collection
+  - pexpect         # required for backup job run with --ask-vault-pass option
+
+system_packages:
+  - ansible-core    # required for ansible
+  - yq              # required for exporting configuration with infra.aap_configuration_extended collection
+  - nfs-utils       # required for NFS mounts for HA Private Automation Hub Pre-Config and Backup job
+  - ansible-builder # required for building custom execution environment images
+  - pinentry        # required for ansible to connect remote machines using SSH
+

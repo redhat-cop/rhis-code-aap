@@ -1,0 +1,10 @@
+---
+- name: "Validate Containers"
+  ansible.builtin.import_playbook: function_validate_aap.yml
+  vars:
+    host: aap,!bastion
+
+- name: "Validate AAP Functionality"
+  ansible.builtin.import_playbook: function_status_aap.yml
+  vars:
+    host: bastion

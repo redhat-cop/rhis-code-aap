@@ -1,0 +1,8 @@
+---
+set_aap_setup_variables_aap_cert_dest_path: "{{ lookup('env', 'HOME') }}/certs"
+set_aap_setup_variables_aap_cert__dest_owner: "{{ lookup('env', 'USER') }}"
+set_aap_setup_variables_aap_cert_dest_group: "{{ lookup('pipe', 'id -gn') }}"
+
+set_aap_setup_variables_aap_setup_certs_dir: "{{ lookup('env', 'HOME') }}/aap_downloads/certs"
+
+set_aap_setup_variables_connected: true

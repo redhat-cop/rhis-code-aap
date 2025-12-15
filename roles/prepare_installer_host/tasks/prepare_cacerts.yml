@@ -1,0 +1,28 @@
+---
+- name: Create required directories
+  ansible.builtin.file:
+    path: "{{ issue_cert_workdir }}"
+    state: directory
+    mode: '0755'
+
+- name: Download Root CA certificate
+  ansible.builtin.get_url:
+    url: "{{ issue_cert_root_ca_url }}"
+    dest: "{{ issue_cert_workdir }}/root_ca.pem"
+    mode: '0644'
+  when: issue_cert_root_ca_url is defined and issue_cert_root_ca_url != ''
+
+- name: Download Subordinate CA certificate
+  ansible.builtin.get_url:
+    url: "{{ issue_cert_sub_ca_url }}"
+    dest: "{{ issue_cert_workdir }}/sub_ca.pem"
+    mode: '0644'
+  when: issue_cert_sub_ca_url is defined and issue_cert_sub_ca_url != ''
+
+- name: Combine Root and Subordinate CA certificates into a CA chain file
+  ansible.builtin.copy:
+    content: "{{ lookup('file', issue_cert_workdir + '/root_ca.pem') }}\n{{ lookup('file', issue_cert_workdir + '/sub_ca.pem') }}"
+    dest: "{{ issue_cert_workdir }}/ca-chain.crt"
+    mode: '0644'
+  when: issue_cert_root_ca_url is defined and issue_cert_root_ca_url != '' and
+        issue_cert_sub_ca_url is defined and issue_cert_sub_ca_url != ''

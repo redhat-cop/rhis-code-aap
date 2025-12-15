@@ -1,0 +1,27 @@
+---
+collections:
+{% for collection in collection_requirements_list %}
+  - name: {{ collection.name }}
+{% if collection.version is defined %}
+    version: {{ collection.version }}
+{% endif %}
+{% if collection.source is defined %}
+    source: {{ collection.source }}
+    type: {{ collection.type }}
+{% endif %}
+{% endfor %}
+
+roles:
+{% for role in role_requirements_list %}
+{% if role.name is defined %}
+  - name: {{ role.name }}
+{% endif %}
+{% if role.version is defined %}
+    version: {{ role.version }}
+{% endif %}
+{% if role.url is defined %}
+    src: {{ role.url }}
+    type: {{ role.type }}
+{% endif %}
+{% endfor %}
+

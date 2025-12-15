@@ -1,0 +1,8 @@
+---
+- name: "Export AAP Configuration"
+  ansible.builtin.import_playbook: function_filetree_create.yml
+  vars:
+    host: bastion
+    flatten_output: true
+    output_path: "{{ home_aap }}/aap_config_export"
+    aap_hostname: "{{ gateway_main_url }}"

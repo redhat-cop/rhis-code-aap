@@ -1,0 +1,30 @@
+---
+- name: "Enforce CIS"
+  ansible.builtin.import_playbook: type_enforce_cis.yml
+
+- name: "Init PostgreSQL DB"
+  ansible.builtin.import_playbook: type_init_db.yml
+
+- name: "Init NFS mountpoint Ownership"
+  ansible.builtin.import_playbook: type_init_nfs_ownership.yml
+
+- name: "Install AAP"
+  ansible.builtin.import_playbook: type_install_aap.yml
+
+- name: "Download Collections"
+  ansible.builtin.import_playbook: type_download_collections.yml
+
+- name: "Upload Collections"
+  ansible.builtin.import_playbook: type_upload_collections.yml
+
+- name: "Build Custom EE"
+  ansible.builtin.import_playbook: type_custom_ee.yml
+
+- name: "Configure AAP"
+  ansible.builtin.import_playbook: type_configure_aap.yml
+
+- name_ "Validate AAP"
+  ansible.builtin.import_playbook: type_validate.aap.yml
+
+- name: "Backup AAP"
+  ansible.builtin.import_playbook: type_aap_backup.yml

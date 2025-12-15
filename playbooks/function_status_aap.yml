@@ -1,0 +1,264 @@
+---
+- name: "Validate AAP Status and Test Functionality"
+  hosts: bastion
+  gather_facts: false
+  tasks:
+
+    - name: "Create new token"
+      ansible.platform.token:
+        description: "Temporary access token"
+        scope: "write"
+        state: present
+        aap_hostname: "{{ gateway_main_url }}"
+        aap_username: "{{ gateway_admin_username }}"
+        aap_password: "{{ gateway_admin_password }}"
+      no_log: true
+      when: aap_token is not defined
+
+    - name: "Check if token was created"
+      ansible.builtin.fail:
+        msg: "error: check task Create new token"
+      when: aap_token is not defined
+
+    - name: "Set Token as fact"
+      ansible.builtin.set_fact:
+        token: "{{ aap_token.token }}"
+
+    - name: "Gateway Ping Status"
+      ansible.builtin.uri:
+        url: "https://{{ gateway_main_url }}/api/gateway/v1/ping/"
+        method: GET
+        return_content: true
+        validate_certs: "{{ aap_validate_certs | default(true) }}"
+        headers:
+          Authorization: "Bearer {{ token }}"
+        timeout: "30"
+      register: __ping_res
+
+    - name: "Assert ping returns"
+      ansible.builtin.assert:
+        that:
+          - __ping_res.json.status == 'good'
+          - __ping_res.json.version is defined
+          - __ping_res.json.db_connected == true
+        success_msg: "Gateway healthy: Gateway API reachable and version reported."
+        fail_msg: "Gateway NOT healthy."
+
+    - name: "Gateway TLS certificate chain (openssl)"
+      ansible.builtin.shell: 
+        cmd: "openssl s_client -connect {{ gateway_main_url }}:443 -showcerts -servername {{ gateway_main_url }} </dev/null"
+      register: __tls_out
+      changed_when: false
+      when: check_tls | bool
+
+    - name: "Assert TLS output mentions subject/issuer"
+      ansible.builtin.assert:
+        that:
+          - "'subject=' in __tls_out.stdout"
+          - "'issuer=' in __tls_out.stdout"
+        success_msg: "TLS info detected from gateway certificate."
+        fail_msg: "TLS info NOT detected from gateway certificate."
+      when: check_tls | bool
+
+    - name: "Negative bypass"
+      ansible.builtin.uri:
+        url: "{{ item }}"
+        method: GET
+        status_code: [0, 401, 403, 404, 502, 503]  # treat connection failures or forbidden as PASS
+        validate_certs: "{{ aap_validate_certs | default(true) }}"
+        return_content: false
+        timeout: 5
+      register: __bypass_attempt
+      failed_when: false
+      loop: "{{ bypass_urls }}"
+      loop_control:
+        label: "{{ item }}"
+      when: bypass_urls | length > 0
+
+    - name: "Note bypass results"
+      ansible.builtin.debug:
+        msg: "Bypass attempt to {{ item.item }} returned status {{ item.status | default('conn-fail') }}"
+      loop: "{{ __bypass_attempt.results | default([]) }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: "AAP Service Status"
+      ansible.builtin.uri:
+        url: "https://{{ gateway_main_url }}/api/gateway/v1/status/"
+        method: GET
+        return_content: true
+        validate_certs: "{{ aap_validate_certs | default(true) }}"
+        headers:
+          Authorization: "Bearer {{ token }}"
+        timeout: "30"
+      register: __status_res
+
+    - name: "Assert service status Assert"
+      ansible.builtin.assert:
+        that:
+          - __status_res.json.status == 'good'
+        success_msg: "Services healthy: Cluster Status is healthy."
+        fail_msg: "Services NOT healthy."
+
+    - name: "Verify All Instances (Nodes) are Healthy"
+      ansible.builtin.uri:
+        url: "https://{{ gateway_main_url }}/api/controller/v2/instances/"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ token }}"
+        status_code: 200
+        validate_certs: "{{ aap_validate_certs | default(true) }}"
+      register: __instance_check
+
+    - name: "Assert Health Status of All Instances"
+      ansible.builtin.assert:
+        that:
+          - item.node_state == 'ready'
+        fail_msg: "Instance '{{ item.hostname }}' is NOT healthy. State: {{ item.node_state }}"
+        quiet: true
+      loop: "{{ __instance_check.json.results }}"
+      loop_control:
+        label: "{{ item.hostname }}"
+
+    - name: "Find test Job Template"
+      ansible.builtin.uri:
+        url: "https://{{ gateway_main_url }}/api/controller/v2/job_templates/?name={{ test_job_template_name | urlencode }}"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ token }}"
+        validate_certs: "{{ aap_validate_certs | default(true) }}"
+      register: __job_template_res
+
+    - name: "Assert Job Template exists"
+      ansible.builtin.assert:
+        that:
+          - __job_template_res.json.count | int >= 1
+        fail_msg: "Job Template '{{ test_job_template_name }}' not found."
+        success_msg: "Job Template '{{ test_job_template_name }}' found."
+
+    - name: "Set fact for job template id"
+      ansible.builtin.set_fact:
+        __job_template_id: "{{ __job_template_res.json.results[0].id }}"
+
+    - name: "Launch test Job Template and wait for success"
+      ansible.builtin.uri:
+        url: "https://{{ gateway_main_url }}/api/controller/v2/job_templates/{{ __job_template_id }}/launch/"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ token }}"
+        body_format: json
+        body:
+          extra_vars:
+            host: "{{ groups.bastion | first }}"
+        status_code: 201
+        validate_certs: "{{ aap_validate_certs | default(true) }}"
+      register: __ping_job_launch
+
+    - name: "Wait for 'ping' job to complete successfully"
+      ansible.builtin.uri:
+        url: "https://{{ gateway_main_url }}/api/controller/v2/jobs/{{ __ping_job_launch.json.job }}/"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ token }}"
+        validate_certs: "{{ aap_validate_certs | default(true) }}"
+      register: __ping_job_status
+      until: __ping_job_status.json.status == 'successful' or __ping_job_status.json.status in ['failed', 'error']
+      retries: 30
+      delay: 5
+
+    - name: "Assert 'ping' job completed successfully"
+      ansible.builtin.assert:
+        that:
+          - __ping_job_status.json.status == 'successful'
+        fail_msg: "Job '{{ __ping_job_launch.json.job }}' failed or errored. Final Status: {{ __ping_job_status.json.status }}"
+
+    - name: "Find the default Project ID and launch sync"
+      ansible.builtin.uri:
+        url: "https://{{ gateway_main_url }}/api/controller/v2/projects/?name={{ test_project_name | urlencode }}"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ token }}"
+        validate_certs: "{{ aap_validate_certs | default(true) }}"
+      register: __project_search_res
+
+    - name: "Assert Project exists"
+      ansible.builtin.assert:
+        that:
+          - __project_search_res.json.count | int >= 1
+        fail_msg: "Project '{{ test_project_name }}' not found."
+        success_msg: "Project '{{ test_project_name }}' found."
+
+    - name: "Set fact for job template id"
+      ansible.builtin.set_fact:
+        __project_id: "{{ __project_search_res.json.results[0].id }}"
+
+    - name: "Wait for Project Sync to complete and assert success"
+      ansible.builtin.uri:
+        url: "https://{{ gateway_main_url }}/api/controller/v2/projects/{{ __project_id }}/update/"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ token }}"
+        status_code: 202
+        validate_certs: "{{ aap_validate_certs | default(true) }}"
+      register: __project_update_launch
+
+    - name: "Check Project Update Status"
+      ansible.builtin.uri:
+        url: "https://{{ gateway_main_url }}/api/controller/v2/project_updates/{{ __project_update_launch.json.project_update }}/"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ token }}"
+        validate_certs: "{{ aap_validate_certs | default(true) }}"
+      register: __project_update_status
+      until: __project_update_status.json.status == 'successful' or __project_update_status.json.status in ['failed', 'error']
+      retries: 15
+      delay: 5
+
+    - name: "Assert Project Sync completed successfully"
+      ansible.builtin.assert:
+        that:
+          - __project_update_status.json.status == 'successful'
+        fail_msg: "Project sync failed. Final Status: {{ __project_update_status.json.status }}"
+
+    - name: "List container (EE registry)"
+      ansible.builtin.uri:
+        url: "https://{{ gateway_main_url}}/api/galaxy/pulp/api/v3/distributions/?name={{ test_ee_name | urlencode }}"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ token }}"
+        validate_certs: "{{ aap_validate_certs | default(true) }}"
+      register: __pah_ee_res
+      failed_when: false
+
+    - name: "Assert PAH EE exists"
+      ansible.builtin.assert:
+        that:
+          - __pah_ee_res.json.count | int >= 1
+        fail_msg: "Execution Environment container image '{{ test_ee_name }}' not found."
+        success_msg: "Execution Environment container image '{{ test_ee_name }}' found."
+
+    - name: "Find Organization"
+      ansible.builtin.uri:
+        url: "https://{{ gateway_main_url }}/api/gateway/v1/organizations/?name={{ test_org_name }}"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ token }}"
+        validate_certs: "{{ aap_validate_certs | default(true) }}"
+      register: __org_search_res
+      failed_when: false
+
+    - name: "Assert Organization"
+      ansible.builtin.assert:
+        that:
+          - __org_search_res.json.count | int >= 1
+        fail_msg: "Organization '{{ test_org_name }}' not found."
+        success_msg: "Organization '{{ test_org_name }}' found."
+
+    - name: Delete the token
+      ansible.platform.token:
+        existing_token: "{{ aap_token }}"
+        state: absent
+        aap_hostname: "{{ gateway_main_url }}"
+        aap_username: "{{ gateway_admin_username }}"
+        aap_password: "{{ gateway_admin_password }}"
+      when: aap_token is defined

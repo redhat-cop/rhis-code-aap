@@ -1,0 +1,63 @@
+---
+- name: "Download and install AAP"
+  hosts: "{{ host | default('localhost') }}"
+  connection: local
+  gather_facts: false
+
+  tasks:
+    - name: set_aap_setup_variables
+      ansible.builtin.import_role:
+        name: set_aap_setup_variables
+      tags:
+        - always
+
+    - name: aap_license_download
+      ansible.builtin.import_role:
+        name: aap_license_download
+      when: connected_environment | bool
+      tags:
+        - aap_license_download
+
+    - name: infra.aap_utilities.aap_certs
+      ansible.builtin.import_role:
+        name: infra.aap_utilities.aap_certs
+      tags:
+        - aap_certs
+
+    - name: infra.aap_utilities.aap_setup_download
+      ansible.builtin.import_role:
+        name: infra.aap_utilities.aap_setup_download
+      when: connected_environment | bool
+      tags:
+        - aap_setup_download
+
+    - name: infra.aap_utilities.aap_setup_prepare
+      ansible.builtin.import_role:
+        name: infra.aap_utilities.aap_setup_prepare
+      tags:
+        - aap_setup_prepare
+
+    - name: infra.aap_utilities.aap_setup_install
+      ansible.builtin.import_role:
+        name: infra.aap_utilities.aap_setup_install
+      tags:
+        - aap_setup_install
+
+  post_tasks:
+    - name: "Read the inventory file"
+      ansible.builtin.set_fact:
+        __inventory_content: "{{ lookup('file', aap_setup_prep_setup_dir + 'inventory') }}"
+
+    - name: "Vault inventory content"
+      ansible.builtin.set_fact:
+        __vault_inventory_content: "{{ __inventory_content | vault(aap_install_vault_token) }}"
+
+    - name: "Overwrite file with vaulted content"
+      ansible.builtin.copy:
+        content: "{{ __vault_inventory_content }}"
+        dest: "{{ aap_setup_prep_setup_dir }}/inventory"
+        mode: '0600'
+        force: true
+        decrypt: false
+      run_once: true
+      when: aap_install_vault_token is defined and aap_install_vault_token != ''

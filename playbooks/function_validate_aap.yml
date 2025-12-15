@@ -1,0 +1,60 @@
+---
+- name: "Validate AAP Deployment {{ aap_setup_down_version }}"
+  hosts: "{{ host | default('localhost') }}"
+  gather_facts: false
+  tasks:
+    - name: Block for service check
+      when:
+        - required_services is defined
+      block:
+        - name: Verify required container services are running
+          ansible.builtin.shell: "systemctl --user is-active {{ __required_service }}"
+          register: __service_status_check
+          changed_when: false
+          environment:
+            XDG_RUNTIME_DIR: "/run/user{{ lookup('pipe', 'id -u ' + aap_service_user) }}"
+          loop: "{{ required_services }}"
+          loop_control:
+            loop_var: __required_service
+
+        - name: "Assert all services are 'active'"
+          ansible.builtin.assert:
+            that:
+              - __service_status_check_detail.stdout_lines[0] == 'active'
+            fail_msg: "Required service '{{ __service_status_check_detail.__required_service }}' is missing or not running on {{ inventory_hostname }}."
+            success_msg: "Service '{{ __service_status_check_detail.__required_service }}' is running."
+            quiet: true
+          changed_when: false
+          loop: "{{ __service_status_check.results }}"
+          loop_control:
+            label: "{{ __service_status_check_detail.__required_service }}" 
+            loop_var: __service_status_check_detail
+
+    - name: "Validate PostgreSQL Connectivity"
+      ansible.builtin.wait_for:
+        host: "{{ groups.database | first }}"
+        port: "{{ aap_postgres_port }}"
+        timeout: 5
+        state: present
+      when: inventory_hostname in groups.automationcontroller or inventory_hostname in groups.automationgateway or inventory_hostname in groups.automationhub or inventory_hostname in groups.automationeda 
+
+    - name: "Validate Execution Node to Controller Receptor Port (27199)"
+      ansible.builtin.wait_for:
+        host: "{{ controller_host }}"
+        port: 27199
+        timeout: 5
+        state: present
+      loop: "{{ groups.automationcontroller }}"
+      loop_control:
+        loop_var: controller_host
+      delegate_to: "{{ inventory_hostname }}"
+      when: inventory_hostname in groups.execution_nodes
+
+    - name: "Check LDAP Server Network Connectivity"
+      ansible.builtin.wait_for:
+        host: "{{ ldap_server_uri }}"
+        port: "{{ ldap_server_port }}"
+        timeout: 5
+        state: present
+      delegate_to: "{{ inventory_hostname }}"
+      when: inventory_hostname in groups.automationgateway

@@ -1,0 +1,13 @@
+---
+- name: "Regenerate Private Automation Hub token"
+  ansible.builtin.import_playbook: function_pah_token.yml
+  vars:
+    host: bastion
+
+- name: "Build Custom Environment Image"
+  ansible.builtin.import_playbook: function_custom_ee.yml
+  vars:
+    host: bastion
+    aap_hostname: "{{ gateway_main_url }}"
+    aap_username: "{{ vault_gateway_admin_username }}"
+    aap_password: "{{ vault_gateway_admin_password }}"

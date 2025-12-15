@@ -1,0 +1,5 @@
+---
+- name: "Download Collections from External URL"
+  ansible.builtin.import_playbook: function_download_collections.yml
+  vars:
+    host: bastion

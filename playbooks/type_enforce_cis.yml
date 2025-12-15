@@ -1,0 +1,5 @@
+---
+- name: Enforce CIS on all hosts
+  ansible.builtin.import_playbook: function_enforce_cis.yml
+  vars:
+    host: all

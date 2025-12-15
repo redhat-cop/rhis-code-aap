@@ -1,0 +1,8 @@
+---
+- name: "Upload Collections to Private Automation Hub"
+  ansible.builtin.import_playbook: function_upload_collections.yml
+  vars:
+    host: bastion
+    aap_hostname: "{{ gateway_main_url }}"
+    aap_username: "{{ gateway_admin_username }}"
+    aap_password: "{{ gateway_admin_password }}"

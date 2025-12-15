@@ -1,0 +1,5 @@
+---
+- name: "Init NFS Ownership"
+  ansible.builtin.import_playbook: function_init_nfs.yml
+  vars:
+    host: "{{ groups.automationhub | first }}"

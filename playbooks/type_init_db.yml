@@ -1,0 +1,5 @@
+---
+- name: "Init PostgreSQL Database Server"
+  ansible.builtin.import_playbook: function_init_db.yml
+  vars:
+    host: external_database

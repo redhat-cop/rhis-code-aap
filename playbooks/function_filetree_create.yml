@@ -1,0 +1,46 @@
+---
+- hosts: "{{ host | default('localhost') }}"
+  gather_facts: false
+
+  pre_tasks:
+    - name: "Setup authentication (block)"
+      block:
+        - name: "Get the Authentication Token for the future requests"
+          ansible.builtin.uri:
+            url: "https://{{ gateway_main_url }}/api/gateway/v1/tokens/"
+            user: "{{ vault_gateway_admin_username }}"
+            password: "{{ vault_gateway_admin_password }}"
+            method: POST
+            force_basic_auth: true
+            validate_certs: "{{ aap_validate_certs }}"
+            status_code: 201
+          register: authtoken_res
+
+        - name: "Set the oauth token to be used since now"
+          ansible.builtin.set_fact:
+            aap_oauthtoken: "{{ authtoken_res.json.token }}"
+            aap_oauthtoken_url: "{{ authtoken_res.json.url }}"
+      no_log: "{{ controller_configuration_filetree_create_secure_logging | default('false') }}"
+      when: aap_oauthtoken is not defined
+      tags:
+        - always
+
+    - name: "Remove previous export directory"
+      ansible.builtin.file:
+        path: "{{ output_path }}"
+        state: absent
+
+  roles:
+    - role: infra.aap_configuration_extended.filetree_create
+
+  post_tasks:
+    - name: "Delete the Authentication Token used"
+      ansible.builtin.uri:
+        url: "https://{{ gateway_main_url }}{{ aap_oauthtoken_url }}"
+        user: "{{ vault_gateway_admin_username }}"
+        password: "{{ vault_gateway_admin_password }}"
+        method: DELETE
+        force_basic_auth: true
+        validate_certs: "{{ aap_validate_certs }}"
+        status_code: 204
+      when: aap_oauthtoken_url is defined

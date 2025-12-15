@@ -1,0 +1,20 @@
+---
+pg_port: 5432
+pg_superuser: "postgres"
+pg_superuser_password: "{{ postgresql_admin_password }}"
+pg_host: "127.0.0.1"
+pg_sslmode: "disable"
+
+aap_databases:
+  - name: "{{ gateway_db_name }}"
+    owner: "{{ gateway_db_user }}"
+    password: "{{ gateway_db_pass }}"
+  - name: "{{ controller_db_name }}"
+    owner: "{{ controller_db_user }}"
+    password: "{{ controller_db_pass }}"
+  - name: "{{ hub_db_name }}"
+    owner: "{{ hub_db_user }}"
+    password: "{{ hub_db_pass }}"
+  - name: "{{ eda_db_name }}"
+    owner: "{{ eda_db_user }}"
+    password: "{{ eda_db_pass }}"

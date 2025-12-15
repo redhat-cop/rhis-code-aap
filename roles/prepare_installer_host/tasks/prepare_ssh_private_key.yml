@@ -1,0 +1,30 @@
+---
+- name: Ensure destination parent dir exists
+  ansible.builtin.file:
+    path: "{{ ssh_dest_path | dirname }}"
+    state: directory
+    owner: "{{ ssh_dest_owner }}"
+    group: "{{ ssh_dest_group }}"
+    mode: "0700"
+
+- name: Read SSH private key from Vault
+  set_fact:
+    ssh_private_key: "{{ aap_setup_inst_ssh_priv_key }}"
+  when: ansible_hashi_vault_url is defined and ansible_hashi_vault_url | length > 0
+  no_log: true
+
+- name: Fail if we can't fetch the key from Vault
+  ansible.builtin.fail:
+    msg: "SSH private key could not be obtained from Vault. Check credentials / path."
+  when: ssh_private_key is not defined or ssh_private_key | length == 0
+
+- name: Write SSH private key file
+  ansible.builtin.copy:
+    dest: "{{ ssh_dest_path }}"
+    content: "{{ ssh_private_key }}"
+    owner: "{{ ssh_dest_owner }}"
+    group: "{{ ssh_dest_group }}"
+    mode: "0600"
+    backup: false
+  no_log: true
+  when: ssh_private_key is defined and ssh_private_key | length > 0

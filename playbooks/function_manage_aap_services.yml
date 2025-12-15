@@ -1,0 +1,132 @@
+---
+- name: Manage containerized AAP services via systemd --user
+  hosts: "{{ host | default('localhost') }}"
+  gather_facts: false
+
+    aap_actions:
+      start:
+        state: started
+        sequence:
+          - postgresql
+          - receptor
+          - redis
+          - hub
+          - controller
+          - eda
+          - gateway
+      restart:
+        state: restarted
+        sequence:
+          - postgresql
+          - receptor
+          - redis
+          - hub
+          - controller
+          - eda
+          - gateway
+      stop:
+        state: stopped
+        sequence:
+          - gateway
+          - eda
+          - controller
+          - hub
+          - redis
+          - receptor
+          - postgresql
+
+    aap_service_map:
+      postgresql:
+        groups: ['database']
+        units:
+          - postgresql.service
+      receptor:
+        groups: ['execution_nodes']
+        units:
+          - receptor.service
+      redis:
+        groups: []
+        units:
+          - redis-unix.service
+          - redis-tcp.service
+      hub:
+        groups: ['automationhub']
+        units:
+          - automation-hub-api.service
+          - automation-hub-content.service
+          - automation-hub-web.service
+          - automation-hub-worker-1.service
+          - automation-hub-worker-2.service
+      controller:
+        groups: ['automationcontroller']
+        units:
+          - automation-controller-rsyslog.service
+          - automation-controller-task.service
+          - automation-controller-web.service
+      eda:
+        groups: ['automationeda']
+        units:
+          - automation-eda-activation-worker-1.service
+          - automation-eda-activation-worker-2.service
+          - automation-eda-api.service
+          - automation-eda-daphne.service
+          - automation-eda-scheduler.service
+          - automation-eda-web.service
+          - automation-eda-worker-1.service
+          - automation-eda-worker-2.service
+      gateway:
+        groups: ['automationgateway']
+        units:
+          - automation-gateway.service
+          - automation-gateway-proxy.service
+
+  tasks:
+    - name: "Gather existing user services on this host"
+      ansible.builtin.command:
+        cmd: systemctl --user list-unit-files --type=service --no-legend
+      register: aap_user_units_raw
+      changed_when: false
+
+    - name: "Build list of existing user service unit names"
+      ansible.builtin.set_fact:
+        aap_existing_user_units: >-
+          {{
+            aap_user_units_raw.stdout_lines | default([]) |
+            map('split') | map('first') | list
+          }}
+
+    - name: Debug existing user units (for troubleshooting)
+      ansible.builtin.debug:
+        var: aap_existing_user_units
+      when: ansible_verbosity | int >= 2
+
+    - name: "Determine effective action"
+      ansible.builtin.set_fact:
+        aap_effective_action: "{{ aap_action | default(aap_default_action, true) }}"
+
+    - name: "Validate requested action '{{ aap_effective_action }}'"
+      ansible.builtin.assert:
+        that:
+          - aap_effective_action in aap_actions
+        fail_msg: "Unsupported aap_action='{{ aap_effective_action }}'. Use one of: {{ aap_actions.keys() | join(', ') }}"
+        success_msg: "Using aap_action='{{ aap_effective_action }}'."
+
+    - name: "Manage AAP services (action={{ aap_effective_action }})"
+      ansible.builtin.systemd_service:
+        name: "{{ service.1 }}"
+        state: "{{ aap_actions[aap_effective_action].state }}"
+        scope: user
+      loop: "{{ aap_actions[aap_effective_action].sequence
+                | map('extract', aap_service_map)
+                | list
+                | subelements('units') }}"
+      loop_control:
+        label: "{{ service.1 }}"
+        loop_var: "service"
+      when: service.0.groups | intersect(group_names) | length > 0 or service.1 in (aap_existing_user_units | default([]))
+      tags:
+        - aap_start
+        - aap_stop
+        - aap_restart
+        - aap_manage
+

@@ -1,0 +1,63 @@
+---
+- name: "Backup Ansible Automation Platform"
+  hosts: "{{ host | default('localhost') }}"
+
+  pre_tasks:
+    - name: "Ensure NFS client is installed"
+      become: true
+      ansible.builtin.package:
+        name: "nfs-utils"
+        state: present
+
+    - name: "Ensure mount point exists"
+      ansible.builtin.file:
+        path: "{{ mount_point }}"
+        state: directory
+        mode: "0755"
+
+  tasks:
+    - name: "Mount NFS and Backup"
+      when: "'nfs' in groups"
+      block:
+        - name: Mount NFS (entry will be created in fstab)
+          become: true
+          ansible.posix.mount:
+            src: "{{ groups.nfs | first }}:{{ nfs_export }}"
+            path: "{{ mount_point }}"
+            fstype: nfs
+            opts: "{{ nfs_opts }}"
+            state: mounted
+
+        - name: "Backup Containerized AAP"
+          ansible.builtin.expect:
+            command: "ansible-playbook -i inventory ansible.containerized_installer.backup --ask-vault-pass"
+            responses:
+              password: "{{ vault_aap_install_vault_token }}"
+            timeout: null
+          args:
+            chdir: "{{ aap_setup_dir }}"
+          no_log: true
+
+      always:
+        - name: "Unmount the NFS share (leave fstab line)"
+          become: true
+          ansible.posix.mount:
+            path: "{{ mount_point }}"
+            state: unmounted
+          register: __unmount_result
+          failed_when: "__unmount_result is failed and ('not mounted' not in (__unmount_result.msg |default('')))"
+
+        - name: "Remove fstab entry so it stays temporary"
+          become: true
+          ansible.posix.mount:
+            src: "{{ groups.nfs | first }}:{{ nfs_export }}"
+            path: "{{ mount_point }}"
+            fstype: nfs
+            state: absent
+
+        - name: "Optionally remove the temporary mount directory"
+          become: true
+          ansible.builtin.file:
+            path: "{{ mount_point }}"
+            state: absent
+          when: cleanup_mount_dir | bool

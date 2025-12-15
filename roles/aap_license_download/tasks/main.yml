@@ -1,0 +1,166 @@
+---
+- name: Block for Connected Environment
+  when: connected_environment is defined and connected_environment
+  block:
+    - name: Login to Red Hat APIs
+      ansible.builtin.uri:
+        url: "{{ aap_license_download_token_url }}"
+        method: POST
+        body_format: form-urlencoded
+        body:
+          grant_type: refresh_token
+          client_id: rhsm-api
+          refresh_token: "{{ aap_setup_down_offline_token }}"
+        return_content: true
+        validate_certs: "{{ aap_license_download_validate_certs }}"
+        status_code: [200, 400, 401]
+      register: __login_result
+
+    - name: Fail if login did not return an access token
+      ansible.builtin.fail:
+        msg: "Login failed: {{ __login_result }}"
+      when: __login_result.status != 200 or (__login_result.json.access_token is not defined)
+
+    - name: Build API headers
+      ansible.builtin.set_fact:
+        __rh_headers:
+          Authorization: "Bearer {{ __login_result.json.access_token }}"
+          Accept: "application/json"
+
+    - name: List allocations
+      ansible.builtin.uri:
+        url: "{{ aap_license_download_redhat_api }}/allocations?limit=100"
+        method: GET
+        headers: "{{ __rh_headers }}"
+        return_content: true
+        validate_certs: "{{ aap_license_download_validate_certs }}"
+        status_code: 200
+      register: __allocations_resp
+
+    - name: Pick allocation object by name
+      ansible.builtin.set_fact:
+        __allocation_obj: >-
+          {{
+            (__allocations_resp.json.body | default([])
+            | selectattr('name','search', '(?i)^%s$' % (aap_license_download_allocation_name | regex_escape))
+            | list | first) | default({}, true)
+          }}
+
+    - name: Derive existence flag and UUID from selected object
+      ansible.builtin.set_fact:
+        __allocation_exists: "{{ __allocation_obj | length > 0 }}"
+        __allocation_uuid: "{{ __allocation_obj.get('uuid', '') }}"
+      when: __allocation_obj is defined
+
+    - name: Create subscription allocation if not existing
+      ansible.builtin.uri:
+        url: "{{ aap_license_download_redhat_api }}/allocations"
+        method: POST
+        headers: "{{ __rh_headers }}"
+        body_format: json
+        body:
+          name: "{{ aap_license_download_allocation_name }}"
+          version: "{{ aap_license_download_allocation_version }}"
+          type: "{{ aap_license_download_allocation_type }}"
+        validate_certs: "{{ aap_license_download_validate_certs }}"
+        status_code: [200, 201]
+        return_content: true
+      register: __create_allocation_resp
+      when: not __allocation_exists
+
+    - name: Capture UUID if created
+      ansible.builtin.set_fact:
+        __allocation_uuid: "{{ __create_allocation_resp.json.uuid }}"
+      when:
+        - not __allocation_exists
+        - __create_allocation_resp is defined
+        - __create_allocation_resp.json is defined
+        - __create_allocation_resp.json.uuid is defined
+        - __allocation_uuid | length == 0
+
+    - name: Fail if still no allocation UUID exist
+      ansible.builtin.fail:
+        msg: "__allocation_uuid not found; cannot continue."
+      when: __allocation_uuid | length == 0
+
+    - name: Get current entitlements to see if SKU is already attached
+      ansible.builtin.uri:
+        url: "{{ aap_license_download_redhat_api }}/allocations/{{ __allocation_uuid }}?include=entitlements"
+        method: GET
+        headers: "{{ __rh_headers }}"
+        return_content: true
+        validate_certs: "{{ aap_license_download_validate_certs }}"
+        status_code: 200
+      register: __alloc_details
+
+    - name: Check for existing entitlement ID for this SKU
+      ansible.builtin.set_fact:
+        __existing_ent: >-
+          {{ (__alloc_details.json.body.entitlementsAttached.value
+              | default([])
+              | selectattr('sku','equalto', aap_license_download_aap_subscription_sku)
+              | list | first) | default({}, true) }}
+      when: __alloc_details is defined and __alloc_details.json is defined and __alloc_details.json.body is defined
+
+    - name: Update quantity if entitlement already attached
+      when: __existing_ent != {}
+      ansible.builtin.uri:
+        url: "{{ aap_license_download_redhat_api }}/allocations/{{ __allocation_uuid }}/\
+              entitlements/{{ __existing_ent.id }}?quantity={{ aap_license_download_aap_quantity | int }}"
+        method: PUT
+        headers: "{{ __rh_headers }}"
+        validate_certs: "{{ aap_license_download_validate_certs }}"
+        return_content: true
+        status_code: 200
+      register: __update_entitlement_resp
+
+    - name: Attach entitlement if not yet attached
+      when: __existing_ent == {}
+      ansible.builtin.uri:
+        url: "{{ aap_license_download_redhat_api }}/allocations/{{ __allocation_uuid }}/\
+              entitlements?pool={{ aap_license_download_aap_subscription_sku }}\
+              &quantity={{ aap_license_download_aap_quantity | int }}"
+        method: POST
+        headers: "{{ __rh_headers }}"
+        validate_certs: "{{ aap_license_download_validate_certs }}"
+        return_content: true
+        status_code: 200
+      register: __attach_entitlement_resp
+
+    - name: Trigger allocation manifest export
+      ansible.builtin.uri:
+        url: "{{ aap_license_download_redhat_api }}/allocations/{{ __allocation_uuid }}/export"
+        method: GET
+        headers: "{{ __rh_headers }}"
+        validate_certs: "{{ aap_license_download_validate_certs }}"
+        return_content: true
+        status_code: 200
+      register: __allocation_export
+
+    - name: Check export job status
+      ansible.builtin.uri:
+        url: "{{ __allocation_export.json.body.href }}"
+        method: GET
+        headers: "{{ __rh_headers }}"
+        validate_certs: "{{ aap_license_download_validate_certs }}"
+        return_content: true
+        status_code: 200
+      register: __allocation_export
+      until: __allocation_export.status == 200
+      retries: 20
+      delay: 5
+
+    - name: Create the folder if it does not exist
+      ansible.builtin.file:
+        dest: "{{ aap_license_download_file | dirname }}"
+        state: directory
+        mode: '0755'
+
+    - name: Download allocation Manifest
+      ansible.builtin.get_url:
+        url: "{{ aap_license_download_redhat_api }}/allocations/{{ __allocation_uuid }}/export/{{ __allocation_export.json.body.exportID }}"
+        dest: "{{ aap_license_download_file }}"
+        mode: "0644"
+        headers: "{{ __rh_headers }}"
+        validate_certs: "{{ aap_license_download_validate_certs }}"
+      register: __aap_setup_down_downloads

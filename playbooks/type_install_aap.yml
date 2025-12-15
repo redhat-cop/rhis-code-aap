@@ -1,0 +1,5 @@
+---
+- name: "Install AAP"
+  ansible.builtin.import_playbook: function_install_aap.yml
+  vars:
+    host: bastion

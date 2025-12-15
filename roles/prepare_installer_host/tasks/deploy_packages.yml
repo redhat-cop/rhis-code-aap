@@ -1,0 +1,6 @@
+---
+- name: Install ansible-core deploy_packages.yml
+  ansible.builtin.dnf:
+    name: ansible-core
+    state: present
+  become: true

@@ -1,0 +1,20 @@
+---
+- name: Download Collections to Private Automation Hub
+  hosts: "{{ host | default('localhost') }}"
+  gather_facts: false
+
+  tasks:
+    - name: "Ensure that the collection folder exist"
+      ansible.builtin.file:
+        path: "{{ aap_setup_down_dest_dir }}/collections/"
+        state: directory
+        mode: "0700"
+
+    - name: "Download the collection from the URL"
+      ansible.builtin.get_url:
+        url: "{{ collection_external_url }}{{ item.path | regex_search('([^\/]+$)') }}"
+        dest: "{{ aap_setup_down_dest_dir }}/collections/"
+        mode: "0644"
+      loop: "{{ hub_collections }}"
+      loop_control:
+        label: "{{ item.path | basename }}"
