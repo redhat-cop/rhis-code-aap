@@ -1,0 +1,38 @@
+---
+controller_roles:
+  - team: "generic-users"
+    organization: "{{ aap_config_organization }}"
+    role: auditor
+  - team: "generic-users"
+    organization: "{{ aap_config_organization }}"
+    role: execute
+  - team: admin-users
+    organizations: "{{ aap_config_organization }}"
+    role: execute
+  - team: admin-users
+    organizations: "{{ aap_config_organization }}"
+    role: project_admin
+  - team: admin-users
+    organizations: "{{ aap_config_organization }}"
+    role: inventory_admin
+  - team: admin-users
+    organizations: "{{ aap_config_organization }}"
+    role: credential_admin
+  - team: admin-users
+    organizations: "{{ aap_config_organization }}"
+    role: workflow_admin
+  - team: admin-users
+    organizations: "{{ aap_config_organization }}"
+    role: notification_admin
+  - team: admin-users
+    organizations: "{{ aap_config_organization }}"
+    role: job_template_admin
+  - team: admin-users
+    organizations: "{{ aap_config_organization }}"
+    role: execution_environment_admin
+  - team: admin-users
+    organizations: "{{ aap_config_organization }}"
+    role: auditor
+  - team: admin-users
+    organizations: "{{ aap_config_organization }}"
+    role: approval

@@ -1,0 +1,12 @@
+---
+nfs_export: "/data"
+mount_point: "/var/lib/pulp"
+nfs_opts: "rw,nfsvers=4.1"
+
+# Ownership settings
+desired_owner: "aap"
+desired_group: "aap"
+chown_recursive: true
+target_subpath: ""
+
+cleanup_mount_dir: true

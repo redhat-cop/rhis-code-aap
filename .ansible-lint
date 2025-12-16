@@ -10,6 +10,7 @@ exclude_paths:
 warn_list:
   - name[template]
   - run-once[play]
+  - yaml[line-length]
 
 skip_list: # temporary for fixing issues
   - var-naming[no-role-prefix]

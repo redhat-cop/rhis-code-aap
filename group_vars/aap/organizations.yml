@@ -1,0 +1,16 @@
+---
+aap_organizations:
+  - name: "{{ aap_config_organization }}"
+    description: "Organization for {{ aap_config_organization }}"
+    state: present
+    related:
+      notification_templates_started: []
+      notification_templates_success: []
+      notification_templates_error:
+        - name: "SMTP Notification"
+    galaxy_credentials:
+      - "Automation Hub Certified Repository"
+      - "Automation Hub Validated Repository"
+      - "Automation Hub Published Repository"
+      - "Automation Hub Community Repository"
+    default_environment: "Hub Default execution environment"

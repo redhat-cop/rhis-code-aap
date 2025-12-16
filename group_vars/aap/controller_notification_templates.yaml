@@ -1,0 +1,19 @@
+---
+controller_notifications:
+  - name: "SMTP Notification"
+    description: "Send out emails for controller job notifications"
+    organization: "{{ aap_config_organization }}"
+    notification_type: "email"
+    notification_configuration:
+      username: ""  # this is required even if there's no username
+      password: ""  # this is required even if there's no password
+      sender: "aap@example.com"
+      recipients:
+        - recipient_x@example.com
+        - recipient_y@example.com
+      use_tls: false
+      use_ssl: false
+      host: "smtp.example.com"
+      port: 25
+      timeout: 60
+

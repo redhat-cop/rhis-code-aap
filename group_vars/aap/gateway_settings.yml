@@ -1,0 +1,10 @@
+gateway_settings:
+  gateway_access_token_expiration: "600"
+
+  SESSION_COOKIE_AGE: "900"
+  DEFAULT_PAGE_SIZE: "50"
+  MAX_PAGE_SIZE: "200"
+  SOCIAL_AUTH_USERNAME_IS_FULL_EMAIL: "false"
+  INSIGHTS_TRACKING_STATE: "false"
+  custom_login_info: ""
+  custom_logo: ""

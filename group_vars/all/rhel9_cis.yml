@@ -1,0 +1,4 @@
+---
+enable_authselect: false
+sudo_require_authentication: false
+var_system_crypto_policy: "FIPS"

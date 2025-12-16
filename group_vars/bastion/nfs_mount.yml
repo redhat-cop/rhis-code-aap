@@ -1,0 +1,8 @@
+---
+nfs_export: "data/backup"
+
+mount_point: "{{ home_aap }}/backups"
+nfs_opts: "rw,nfsvers=4.1"
+
+cleanup_mount_dir: false
+

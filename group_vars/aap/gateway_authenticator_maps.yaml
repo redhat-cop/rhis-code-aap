@@ -1,0 +1,78 @@
+---
+gateway_authenticator_maps:
+  - name: "Allow Access for Ansible Users Only"
+    authenticator: "LDAP Authentication"
+    map_type: "allow"
+    revoke: true
+    triggers:
+      groups:
+        has_or:
+          - cn=vc_generic_user,ou=group,dc=coecc,dc=cassidian,dc=com
+          - cn=vc_generic_developer,ou=group,dc=coecc,dc=cassidian,dc=com
+          - cn=vc_admin,ou=group,dc=coecc,dc=cassidian,dc=com
+    order: 1
+
+  - name: "Role mapping - vc_generic_users"
+    authenticator: "LDAP Authentication"
+    map_type: role
+    role: "Organization Member"
+    organization: "{{ aap_config_organization }}"
+    team: ""
+    revoke: true
+    triggers:
+      groups:
+        has_or:
+          - cn=vc_generic_user,ou=group,dc=coecc,dc=cassidian,dc=com
+          - cn=vc_generic_developer,ou=group,dc=coecc,dc=cassidian,dc=com
+    order: 2
+
+  - name: "Role mapping - vc_admin"
+    authenticator: "LDAP Authentication"
+    map_type: role
+    role: "Organization Member"
+    organization: "{{ aap_config_organization }}"
+    team: ""
+    revoke: true
+    triggers:
+      groups:
+        has_or:
+          - cn=vc_admin,ou=group,dc=coecc,dc=cassidian,dc=com
+    order: 3
+
+  - name: "Team mapping - vc_generic_users"
+    authenticator: "LDAP Authentication"
+    map_type: team
+    role: "Team Member"
+    organization: "{{ aap_config_organization }}"
+    team: "generic-users"
+    revoke: true
+    triggers:
+      groups:
+        has_or:
+          - cn=vc_generic_user,ou=group,dc=coecc,dc=cassidian,dc=com
+          - cn=vc_generic_developer,ou=group,dc=coecc,dc=cassidian,dc=com
+    order: 4
+
+  - name: "Team mapping - vc_admin"
+    authenticator: "LDAP Authentication"
+    map_type: team
+    role: "Team Member"
+    organization: "{{ aap_config_organization }}"
+    team: "admin-users"
+    revoke: true
+    triggers:
+      groups:
+        has_or:
+          - cn=vc_admin,ou=group,dc=coecc,dc=cassidian,dc=com
+    order: 5
+
+  - name: "Superusers"
+    authenticator: "LDAP Authentication"
+    map_type: "is_superuser"
+    revoke: true
+    triggers:
+      groups:
+        has_or:
+          - cn=vc_admin,ou=group,dc=coecc,dc=cassidian,dc=com
+    order: 6
+

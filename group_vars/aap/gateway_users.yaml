@@ -1,0 +1,5 @@
+---
+aap_user_accounts:
+  - username: "aap_{{ aap_config_organization | lower }}_cac_admin"
+    organization: "{{ aap_config_organization }}"
+    password: "{{ lookup('hashi_vault', hashi_vault_secret_path + ':' + 'gateway_admin_password_secret' ) }}"

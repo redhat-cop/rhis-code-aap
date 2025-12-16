@@ -1,0 +1,24 @@
+---
+backup_dir: "{{ home_aap }}"
+
+# Global control of compression for filesystem backup files
+use_archive_compressionr: true
+
+# Component-level control of compression for filesystem backup files
+# controller_use_archive_compression: true
+# eda_use_archive_compression: true
+# gateway_use_archive_compression: true
+# hub_use_archive_compression: true
+# pcp_use_archive_compression: true
+# postgresql_use_archive_compression: true
+# receptor_use_archive_compression: true
+# redis_use_archive_compression: true
+
+# Global control of compression for database backup files
+use_db_compression: true
+
+# Component-level control of compression for database backup files
+# controller_use_db_compression: true
+# eda_use_db_compression: true
+# hub_use_db_compression: true
+# gateway_use_db_compression: true

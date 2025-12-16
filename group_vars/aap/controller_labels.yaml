@@ -1,0 +1,12 @@
+---
+controller_labels:
+  - name: backup
+    organization: "{{ aap_config_organization }}"
+  - name: operations
+    organization: "{{ aap_config_organization }}"
+  - name: test
+    organization: "{{ aap_config_organization }}"
+  - name: vm update
+    organization: "{{ aap_config_organization }}"
+  - name: configure
+    organization: "{{ aap_config_organization }}"

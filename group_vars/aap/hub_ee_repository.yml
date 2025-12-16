@@ -1,0 +1,10 @@
+---
+hub_ee_repositories:
+  - name: awx-ee
+    description: Execution environment for AWX
+    upstream_name: "ansible/awx-ee"
+    registry:
+    include_tags:
+      - "latest"
+    wait: true
+    sync: true

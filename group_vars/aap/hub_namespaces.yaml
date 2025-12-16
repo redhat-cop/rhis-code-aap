@@ -1,0 +1,9 @@
+---
+hub_namespaces:
+  - name: community
+  - name: netbox
+  - name: infra
+  - name: ansible
+  - name: hashicorp
+  - name: redhat
+  - name: containers

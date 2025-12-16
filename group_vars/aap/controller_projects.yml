@@ -1,0 +1,54 @@
+---
+controller_projects:
+  - name: "ansible"
+    description: "This is sample ansible project"
+    organization: "{{ aap_config_organization }}"
+    scm_type: "git"
+    scm_url: "https://git.example.com/git/scm/ansible.git"
+    credential: "Test Credential"
+    scm_branch: ""
+    scm_clean: false
+    scm_delete_on_update: false
+    scm_update_on_launch: false
+    scm_update_cache_timeout: 0
+    scm_refspec: ""
+    allow_override: false
+    update_project: false
+    timeout: 0
+    wait: true
+
+  - name: "inventory-aap"
+    description: "This project is for SCM Inventory"
+    organization: "{{ aap_config_organization }}"
+    scm_type: "git"
+    scm_url: "https://git.example.com/git/scm/inventory-aap.git"
+    credential: "Test Credential"
+    scm_branch: "{{ aap_config_default_scm_branch }}"
+    scm_clean: false
+    scm_delete_on_update: false
+    scm_update_on_launch: true
+    scm_update_cache_timeout: 0
+    scm_refspec: ""
+    allow_override: false
+    update_project: true
+    timeout: 0
+    notification_templates_error: "{{ aap_config_default_notification_template }}"
+    wait: true
+
+  - name: "ansible-aap"
+    description: "Default AAP Deployment Project"
+    organization: "{{ aap_config_organization }}"
+    scm_type: "git"
+    scm_url: "https://git.example.com/git/scm/ansible-aap.git"
+    credential: "Test Credential"
+    scm_branch: "{{ aap_config_default_scm_branch }}"
+    scm_clean: false
+    scm_delete_on_update: false
+    scm_update_on_launch: false
+    scm_update_cache_timeout: 0
+    scm_refspec: ""
+    allow_override: false
+    update_project: true
+    timeout: 0
+    notification_templates_error: "{{ aap_config_default_notification_template }}"
+    wait: true

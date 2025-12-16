@@ -1,0 +1,82 @@
+---
+ee_builder_dir_clean: false
+ee_builder_dir: "./custom_ee"
+ee_update_base_images: false
+ee_base_registry_username: "admin"
+ee_base_registry_password: "{{ vault_gateway_admin_password }}"
+ee_base_image: "{{ gateway_main_url }}/ee-supported-rhel8:latest"
+ee_pull_collections_from_hub: true
+ee_registry_dest: "{{ gateway_main_url }}"
+ee_registry_username: "admin"
+ee_registry_password: "{{ vault_gateway_admin_password }}"
+ee_ah_host: "{{ gateway_main_url }}"
+ah_configuration_secure_logging: true
+ee_aap_version: 2.5
+ee_verbosity: 1
+ee_podman_config: "aap:10000:65536"
+ee_list:
+  - name: custom_ee_rhel8
+    description: "RHEL 8 image including Netbox and HashiCorp Vault Collections, sourced from ee-supported-rhel8 image." 
+    alt_name: Custom EE
+    tag: latest
+    dependencies:
+      system:
+        - gcc
+        - systemd-devel
+        - python3.11-devel
+      python:
+        - pytz
+        - pynetbox
+        - hvac
+        - pexpect
+      galaxy:
+        collections:
+          - name: netbox.netbox
+            version: 3.21.0
+          - name: community.hashi_vault
+            version: 6.2.0
+          - name: ansible.platform
+            version: 2.6.20250924
+          - name: infra.aap_configuration
+            version: 3.8.3
+          - name: ansible.controller
+            version: 4.7.4
+          - name: ansible.eda
+            version: 2.10.0
+          - name: ansible.hub
+            version: 1.0.3
+          - name: infra.aap_configuration_extended
+            version: 3.0.2
+          - name: infra.aap_utilities
+            version: 2.8.0
+          - name: infra.ee_utilities
+            version: 4.2.0
+          - name: kubernetes.core
+            version: 6.2.0
+          - name: ansible.posix
+            version: 2.1.0
+          - name: ansible.utils
+            version: 6.0.0
+          - name: community.general
+            version: 12.0.0
+          - name: containers.podman
+            version: 1.16.4
+    build_files:
+      - src: /etc/ssl/certs/ca-certificates.crt
+        dest: certs
+      - src: /home/aap/git/ansible-aap/imported/collections/ansible_collections/ansible/platform/plugins/module_utils/aap_module.py
+        dest: fixes
+      - src: /home/aap/git/ansible-aap/imported/collections/ansible_collections/infra/aap_configuration/roles/dispatch/defaults/main.yml
+        dest: fixes
+      - src: /home/aap/git/ansible-aap/imported/collections/ansible_collections/infra/aap_configuration/roles/dispatch/meta/argument_specs.yml
+        dest: fixes
+
+    build_steps:
+      prepend_base:
+        - RUN echo $'[global]\n index-url = https://nexus.example.com/repository/pypi-proxy/simple\n cert = /etc/ssl/certs/ca-certificates.crt\n no-cache-dir = true' > /etc/pip.conf
+        - COPY _build/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+        - RUN update-ca-trust
+      prepend_final:
+        - COPY _build/fixes/aap_module.py /usr/share/ansible/collections/ansible_collections/ansible/platform/plugins/module_utils/aap_module.py
+        - COPY _build/fixes/main.yml /usr/share/ansible/collections/ansible_collections/infra/aap_configuration/roles/dispatch/defaults/main.yml
+        - COPY _build/fixes/argument_specs.yml /usr/share/ansible/collections/ansible_collections/infra/aap_configuration/roles/dispatch/meta/argument_specs.yml

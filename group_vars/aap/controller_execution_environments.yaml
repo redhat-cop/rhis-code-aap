@@ -1,0 +1,8 @@
+---
+controller_execution_environments:
+  - name: "Custom Execution Environment"
+    description: "This image specially build for with Netbox and HashiCorp Vault Collections sourced from supported RHEL 8 container."
+    organization: "{{ aap_config_organization }}"
+    image: "aap.example.com/custom_ee_rhel8:latest"
+    pull: ""
+    credential: "Private Automation Hub Registry Credential"

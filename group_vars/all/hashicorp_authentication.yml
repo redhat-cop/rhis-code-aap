@@ -1,0 +1,10 @@
+---
+# Vault connection / secret settings
+
+ansible_hashi_vault_url: "https://vault.example.com"
+hashi_vault_secret_path: "secret=infraops/data/aap/staging"
+hashi_vault_cert_path: "secret=infraops/data/tls-certs/*.example.com"
+hashi_vault_cacert_path: "secret=infraops/data/tls-certs/ca"
+hashi_vault_registry_path: "devops/data/pforgeipt-divisional/sim/sim-build-readonly"
+ansible_hashi_vault_auth_method: approle
+ansible_hashi_vault_ca_cert: "/etc/ssl/certs/ca-certificates.crt"

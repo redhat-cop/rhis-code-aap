@@ -1,0 +1,158 @@
+---
+controller_templates:
+  - name: "RHEL VM Update - Packages"
+    description: "Update all packages on RHEL VM"
+    playbook: playbooks/function_vm_update.yml
+    labels:
+      - vm update
+    organization: "{{ aap_config_organization }}"
+    job_type: "{{ aap_config_default_job_run }}"
+    inventory: "{{ aap_config_default_inventory }}"
+    project: "{{ aap_config_default_project }}"
+    execution_environment: "{{ aap_config_default_execution_environment }}"
+    credentials: "{{ aap_config_default_credentials }}"
+    allow_simultaneous: true
+    notification_templates_error: "{{ aap_config_default_notification_template }}"
+    survey_enabled: true
+    survey_spec:
+      name: "Survey for hostname"
+      description: "Define hostname or group name Survey"
+      spec:
+        - question_name: "Hostname or Group?"
+          question_description: "Please provide fully qualified hostname or group name"
+          required: true
+          type: text
+          variable: "host"
+          min: 0
+          max: 250
+
+  - name: "Ping Host"
+    description: "Use sample ansible ping to test connection to the managed node"
+    playbook: playbooks/toolbox_ping.yml
+    labels:
+      - test
+    organization: "{{ aap_config_organization }}"
+    job_type: "{{ aap_config_default_job_run }}"
+    inventory: "{{ aap_config_default_inventory }}"
+    project: "{{ aap_config_default_project }}"
+    execution_environment: "{{ aap_config_default_execution_environment }}"
+    credentials: "{{ aap_config_default_credentials }}"
+    allow_simultaneous: true
+    notification_templates_success: "{{ aap_config_default_notification_template }}"
+    notification_templates_error: "{{ aap_config_default_notification_template }}"
+    survey_enabled: true
+    survey_spec:
+      name: "Survey for hostname"
+      description: "Define hostname or group name Survey"
+      spec:
+        - question_name: "Hostname or Group?"
+          question_description: "Please provide fully qualified hostname or group name"
+          required: true
+          type: text
+          variable: "host"
+          min: 0
+          max: 250
+
+  - name: "Backup Ansible Automation Platform"
+    description: "Backup Ansible Automation Platform"
+    playbook: playbooks/function_backup_aap.yml
+    labels:
+      - backup
+    organization: "{{ aap_config_organization }}"
+    job_type: "{{ aap_config_default_job_run }}"
+    inventory: "{{ aap_config_default_inventory }}"
+    project: "{{ aap_config_default_project }}"
+    execution_environment: "Custom Execution Environment"
+    credentials:
+      - "Machine Credential"
+      - "HashiCorp Vault Information"
+    allow_simultaneous: false
+    notification_templates_success: "{{ aap_config_default_notification_template }}"
+    notification_templates_error: "{{ aap_config_default_notification_template }}"
+    extra_vars:
+      host: bastion
+
+  - name: "Export AAP Configuration"
+    description: "Export current configuration as a code on host Bastion VM"
+    playbook: playbooks/function_filetree_create.yml
+    labels:
+      - backup
+    organization: "{{ aap_config_organization }}"
+    job_type: "{{ aap_config_default_job_run }}"
+    inventory: "{{ aap_config_default_inventory }}"
+    project: "{{ aap_config_default_project }}"
+    execution_environment: "Custom Execution Environment"
+    credentials:
+      - "Machine Credential"
+      - "HashiCorp Vault Information"
+    allow_simultaneous: false
+    notification_templates_error: "{{ aap_config_default_notification_template }}"
+    extra_vars:
+      host: bastion
+
+  - name: "Configure AAP"
+    description: "Configure AAP based on Git"
+    playbook: playbooks/type_configure_aap.yml
+    labels:
+      - configure
+    organization: "{{ aap_config_organization }}"
+    job_type: "{{ aap_config_default_job_run }}"
+    inventory: "{{ aap_config_default_inventory }}"
+    project: "{{ aap_config_default_project }}"
+    execution_environment: "Custom Execution Environment"
+    credentials:
+      - "Machine Credential"
+      - "HashiCorp Vault Information"
+    allow_simultaneous: false
+    notification_templates_error: "{{ aap_config_default_notification_template }}"
+    extra_vars:
+      host: bastion
+
+  - name: "VM Create"
+    description: "Create a VM"
+    organization: "{{ aap_config_organization }}"
+    project: "ansible"
+    inventory: "{{ aap_config_default_inventory }}"
+    playbook: "csr/services/playbooks/vm_create.yml"
+    execution_environment: "{{ aap_config_default_execution_environment }}"
+    credentials: "{{ aap_config_default_credentials }}"
+    scm_branch: ""
+    forks: 0
+    limit: ""
+    verbosity: 0
+    job_type: "run"
+    job_slice_count: 1
+    use_fact_cache: false
+    allow_simultaneous: false
+    ask_scm_branch_on_launch: false
+    ask_diff_mode_on_launch: false
+    ask_tags_on_launch: false
+    ask_skip_tags_on_launch: false
+    ask_job_type_on_launch: false
+    ask_verbosity_on_launch: false
+    ask_variables_on_launch: false
+    ask_inventory_on_launch: false
+    ask_limit_on_launch: false
+    ask_credential_on_launch: false
+    ask_execution_environment_on_launch: false
+    ask_labels_on_launch: false
+    ask_forks_on_launch: false
+    ask_job_slice_count_on_launch: false
+    ask_timeout_on_launch: false
+    ask_instance_groups_on_launch: false
+    extra_vars: ""
+    job_tags: ""
+    force_handlers: false
+    skip_tags: ""
+    start_at_task: ""
+    timeout: 0
+    host_config_key: ""
+    labels:
+      - "operations"
+    survey_enabled: false
+    become_enabled: false
+    diff_mode: false
+    webhook_service: ""
+    prevent_instance_group_fallback: false
+    notification_templates_success: "{{ aap_config_default_notification_template }}"
+    notification_templates_error: "{{ aap_config_default_notification_template }}"

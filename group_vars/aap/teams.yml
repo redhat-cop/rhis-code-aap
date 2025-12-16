@@ -1,0 +1,11 @@
+---
+aap_teams:
+  - name: "admin-users"
+    description: "Admin Team"
+    organization: "{{ aap_config_organization }}"
+    state: present
+
+  - name: "generic-users"
+    description: "Users Team"
+    organization: "{{ aap_config_organization }}"
+    state: present

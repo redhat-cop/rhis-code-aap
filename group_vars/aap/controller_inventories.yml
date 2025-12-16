@@ -1,0 +1,6 @@
+---
+controller_inventories:
+  - name: "SCM Inventory"
+    description: "This is the main inventory"
+    organization: "{{ aap_config_organization }}"
+    prevent_instance_group_fallback: False

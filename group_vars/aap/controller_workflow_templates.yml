@@ -1,0 +1,35 @@
+---
+controller_workflows:
+  - name: "RHEL VM Update"
+    description: "Update VM packages"
+    labels:
+      - vm update
+    organization: "{{ aap_config_organization }}"
+    allow_simultaneous: false
+    state: present
+    simplified_workflow_nodes:
+      - identifier: Update
+        unified_job_template: "RHEL VM Update - Packages"
+        credentials: []
+        success_nodes:
+          - UpdateTest
+        failure_nodes: []
+        always_nodes: []
+      - identifier: UpdateTest
+        unified_job_template: "Ping Host"
+        credentials: []
+        failure_nodes: []
+        always_nodes: []
+    survey_enabled: true
+    survey_spec:
+      name: "Survey for hostname"
+      description: "Define hostname or group name Survey"
+      spec:
+        - question_name: "Hostname or Group?"
+          question_description: "Please provide fully qualified hostname or group name"
+          required: true
+          type: text
+          variable: "host"
+          min: 0
+          max: 250
+

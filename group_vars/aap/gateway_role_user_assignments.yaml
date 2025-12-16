@@ -1,0 +1,4 @@
+---
+gateway_role_user_assignments:
+  - role_definition: "Organization Admin"
+    user: "aap_{{ aap_config_organization | lower }}_cac_admin"

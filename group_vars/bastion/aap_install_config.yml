@@ -1,0 +1,125 @@
+---
+# infra.aap_utilities.aap_setup_download
+aap_setup_down_type: setup-bundle
+aap_setup_containerized: true
+aap_setup_down_version: "2.5"
+aap_setup_down_version_patch: "20"
+bundle_install: true
+home_aap: "/home/aap"
+aap_setup_down_dest_dir: "{{ home_aap }}/aap_downloads"
+aap_setup_working_dir: "{{ aap_setup_down_dest_dir }}"
+aap_license_download_file: "{{ aap_setup_down_dest_dir }}/license.zip"
+set_aap_setup_variables_aap_setup_certs_dir: "{{ aap_setup_working_dir }}/certs"
+aap_setup_dir: "{{ aap_setup_down_dest_dir }}/ansible-automation-platform-{% if aap_setup_containerized %}containerized{% endif %}{% if bundle_install %}-setup-bundle-{% endif %}{{ aap_setup_down_version }}-{{ aap_setup_down_version_patch }}-x86_64"
+aap_setup_down_installer_file: "{{ aap_setup_dir }}.tar.gz"
+aap_setup_rhel_version: 9
+aap_setup_inst_log_dir: /tmp
+# Change to false if using external database
+managed_database: true
+# Change to false if deploying in a disconnected environment which needs proxy servers
+connected_environment: false
+aap_license_download_connected: false
+gateway_main_url: "aap.example.com"
+
+# Fill your ssh private key name from vault
+ssh_private_key_name: "id_ed25519"
+aap_setup_inst_ssh_priv_key: "{{ vault_aap_service_user_ssh_private_key }}"
+
+# infra.aap_utilities.aap_setup_prepare
+aap_setup_prep_inv_nodes:
+  automationgateway: "{{ automationgateway }}"
+  automationcontroller: "{{ automationcontroller }}"
+  automationhub: "{{ automationhub }}"
+  automationeda: "{{ automationeda }}"
+  execution_nodes: "{{ execution_nodes }}"
+  redis: "{{ redis }}"
+  database: "{{ database }}"
+
+# infra.aap_utilities.aap_setup_prepare
+aap_setup_prep_inv_vars:
+
+  automationcontroller:
+    receptor_type: control
+
+  execution_nodes:
+    receptor_type: execution
+
+  all:
+    # Platform Gateway Variables
+    gateway_main_url: "https://{{ gateway_main_url }}"
+    gateway_admin_password: "{{ gateway_admin_password }}"
+    gateway_pg_host: "{{ groups.database | first }}"
+    gateway_pg_database: automationgateway
+    gateway_pg_username: gateway
+    gateway_pg_password: "{{ gateway_pg_password }}"
+    gateway_pg_sslmode: verify-full
+    gateway_tls_cert: "{{ set_aap_setup_variables_aap_setup_certs_dir }}/gateway.crt"
+    gateway_tls_key: "{{ set_aap_setup_variables_aap_setup_certs_dir }}/gateway.key"
+
+    # Automation Controller Variables
+    controller_admin_password: "{{ controller_admin_password }}"
+    controller_pg_host: "{{ groups.database | first }}"
+    controller_pg_database: automationcontroller
+    controller_pg_username: awx
+    controller_pg_password: "{{ controller_pg_password }}"
+    controller_pg_sslmode: verify-full
+    controller_tls_cert: "{{ set_aap_setup_variables_aap_setup_certs_dir }}/controller.crt"
+    controller_tls_key: "{{ set_aap_setup_variables_aap_setup_certs_dir }}/controller.key"
+    controller_license_file: "{{ aap_license_download_file }}"
+    controller_create_preload_data: false
+    controller_extra_settings:
+      - setting: USE_X_FORWARDED_HOST
+        value: true
+
+    # Automation Hub Variables
+    hub_admin_password: "{{ hub_admin_password }}"
+    hub_pg_host: "{{ groups.database | first }}"
+    hub_pg_database: automationhub
+    hub_pg_username: pulp
+    hub_pg_password: "{{ hub_pg_password }}"
+    hub_pg_sslmode: verify-full
+    hub_tls_cert: "{{ set_aap_setup_variables_aap_setup_certs_dir }}/hub.crt"
+    hub_tls_key: "{{ set_aap_setup_variables_aap_setup_certs_dir }}/hub.key"
+    hub_shared_data_path: "{{ groups.nfs | first }}:data"
+    hub_seed_collectios: false
+
+    # Event-Driven Ansible Controller Variables
+    eda_admin_password: "{{ eda_admin_password }}"
+    eda_pg_host: "{{ groups.database | first }}"
+    eda_pg_database: automationeda
+    eda_pg_username: eda
+    eda_pg_password: "{{ eda_pg_password }}"
+    eda_pg_sslmode: verify-full
+    eda_tls_cert: "{{ set_aap_setup_variables_aap_setup_certs_dir }}/eda.crt"
+    eda_tls_key: "{{ set_aap_setup_variables_aap_setup_certs_dir }}/eda.key"
+
+    # Database Variables
+    postgresql_admin_password: "{{ postgresql_admin_password }}"
+    postgresql_tls_cert: "{{ set_aap_setup_variables_aap_setup_certs_dir }}/postgre.crt"
+    postgresql_tls_key: "{{ set_aap_setup_variables_aap_setup_certs_dir }}/postgre.key"
+
+    # General Variables
+    custom_ca_cert: "{{ set_aap_setup_variables_aap_setup_certs_dir }}/ca-chain.crt"
+
+    #{% if not connected_environment %}
+    # Parameters for connected installation
+    #registry_auth: false
+    #registry_username:  "{{ registry_username }}"
+    #registry_password: "{{ registry_password }}"
+    #ee_minimal_image: ee-minimal-rhel9:latest
+    #ee_supported_image: ee-supported-rhel9:latest
+    #de_supported_image: de-supported-rhel9:latest
+    #{% endif %}
+    ee_from_hub_only: true
+    aap_certs_create_backup: true
+    redis_mode: cluster
+    bundle_install: "{{ bundle_install }}"
+    bundle_dir: "{{ aap_setup_dir }}/bundle"
+
+    #{% if not connected_environment %}
+    # Fill in environment specific proxies, if needed
+    #https_proxy: ""
+    #http_proxy: ""
+    #no_proxy: ""
+    #{% endif %}
+

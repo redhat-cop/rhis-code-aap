@@ -1,0 +1,7 @@
+---
+hub_ee_registries:
+  - name: "Internal Registry"
+    url: "https://sim-csr-docker.pforgeipt-docker.example.com"
+    proxy: "{{ https_proxy }}"
+    username: "{{ vault_ext_registry_username }}"
+    password: "{{ vault_ext_registry_password }}"

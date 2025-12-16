@@ -1,0 +1,8 @@
+---
+controller_schedules:
+  - name: "Backup AAP Schedule"
+    description: "This schedule runs on every week on Sunday at 07:00am to backup AAP."
+    enabled: true
+    unified_job_template: "Backup Ansible Automation Platform"
+    timezone: "Europe/Berlin"
+    rrule: "DTSTART;TZID=Europe/Berlin:20251113T143000 RRULE:FREQ=WEEKLY;INTERVAL=1;WKST=SU;BYHOUR=0;BYMINUTE=8"

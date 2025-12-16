@@ -1,0 +1,36 @@
+---
+gateway_authenticators:
+  - name: "Local Database Authenticator"
+    type: "ansible_base.authentication.authenticator_plugins.local"
+    enabled: true
+    create_objects: true
+    remove_users: false
+    configuration: {}
+    order: 2
+
+  - name: "LDAP Authentication"
+    type: "ansible_base.authentication.authenticator_plugins.ldap"
+    enabled: true
+    create_objects: true
+    remove_users: true
+    configuration:
+      CONNECTION_OPTIONS: {}
+      GROUP_SEARCH:
+        - ou=group,dc=coecc,dc=cassidian,dc=com
+        - SCOPE_SUBTREE
+        - (objectClass=groupOfUniqueNames)
+      GROUP_TYPE: "GroupOfUniqueNamesType"
+      GROUP_TYPE_PARAMS:
+        name_attr: "cn"
+      SERVER_URI:
+        - ldap://ldap.sim.de.cassidian.corp:389
+      START_TLS: false
+      USER_ATTR_MAP:
+        email: "mail"
+        last_name: "sn"
+        first_name: "givenName"
+      USER_SEARCH:
+        - dc=coecc,dc=cassidian,dc=com
+        - SCOPE_SUBTREE
+        - (uid=%(user)s)
+    order: 1

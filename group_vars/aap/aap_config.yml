@@ -1,0 +1,25 @@
+---
+aap_config: true
+aap_config_pah_repo_sync: true
+aap_config_organization: "Simulation"
+
+aap_config_inventory_repo_name: "inventory-aap"
+aap_config_default_project: "ansible-aap"
+aap_config_default_inventory: "SCM Inventory"
+
+aap_config_default_credentials:
+  - "Machine Credential"
+aap_config_default_notification_template: "SMTP Notification"
+aap_config_default_execution_environment: "Hub Default execution environment"
+aap_config_default_job_run: "run"
+
+aap_config_default_scm_branch: main
+
+controller_configuration_projects_async_retries: "90"
+
+collection_external_url: "https://pforgeipt.example.com/nexus3/repository/sim-assets-public/ansible/galaxy/"
+
+aap_validate_certs: true
+
+assign_galaxy_credentials_to_org: true
+assign_default_ee_to_org: true
