@@ -1,0 +1,56 @@
+---
+bastion:
+  hosts:
+    aap-bastion.example.com:
+
+automationgateway:
+  hosts:
+    aap-gw-01.example.com:
+    aap-gw-02.example.com:
+
+automationcontroller:
+  hosts:
+    aap-ctl-01.example.com:
+    aap-ctl-02.example.com:
+
+automationhub:
+  hosts:
+    aap-pah-01.example.com:
+    aap-pah-02.example.com:
+
+automationeda:
+  hosts:
+    aap-eda-01.example.com:
+    aap-eda-02.example.com:
+
+execution_nodes:
+  hosts:
+    aap-node-01.example.com:
+    aap-node-02.example.com:
+
+database:
+  hosts:
+    aap-db-01.example.com:
+
+redis:
+  hosts:
+    aap-gw-01.example.com:
+    aap-ctl-01.example.com:
+    aap-eda-01.example.com:
+    aap-gw-02.example.com:
+    aap-ctl-02.example.com:
+    aap-eda-02.example.com:
+
+nfs:
+  hosts:
+    aap-nfs.example.com:
+
+aap:
+  children:
+    automationgateway:
+    automationcontroller:
+    automationhub:
+    automationeda:
+    execution_nodes:
+    database:
+    bastion:

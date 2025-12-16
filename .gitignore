@@ -1,4 +1,2 @@
 imported/
 playbooks/test_lookup.yml
-
-*inventory*.yml

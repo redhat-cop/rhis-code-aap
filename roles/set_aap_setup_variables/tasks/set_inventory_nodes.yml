@@ -1,0 +1,36 @@
+---
+- name: Set automationgateway dict
+  set_fact:
+    automationgateway: "{{ automationgateway | default({}) | combine({item: ''}) }}"
+  loop: "{{ groups['automationgateway'] }}"
+
+- name: Set automationcontroller dict
+  set_fact:
+    automationcontroller: "{{ automationcontroller | default({}) | combine({item: ''}) }}"
+  loop: "{{ groups['automationcontroller'] }}"
+
+- name: Set automationhub dict
+  set_fact:
+    automationhub: "{{ automationhub | default({}) | combine({item: ''}) }}"
+  loop: "{{ groups['automationhub'] }}"
+
+- name: Set automationeda dict
+  set_fact:
+    automationeda: "{{ automationeda | default({}) | combine({item: ''}) }}"
+  loop: "{{ groups['automationeda'] }}"
+
+- name: Set execution_nodes dict
+  set_fact:
+    execution_nodes: "{{ execution_nodes | default({}) | combine({item: ''}) }}"
+  loop: "{{ groups['execution_nodes'] }}"
+
+- name: Set redis dict
+  set_fact:
+    redis: "{{ redis | default({}) | combine({item: ''}) }}"
+  loop: "{{ groups['redis'] }}"
+
+- name: Set database dict
+  when: managed_database | bool
+  set_fact:
+    database: "{{ database | default({}) | combine({item: ''}) }}"
+  loop: "{{ groups['database'] }}"
